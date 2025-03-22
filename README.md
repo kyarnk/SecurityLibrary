@@ -198,6 +198,203 @@ runNucleiScan(
 )
 ```
 
+## Использование
+
+### Базовое использование
+
+1. Добавьте библиотеку в ваш Jenkinsfile:
+   ```groovy
+   @Library('security-library') _
+   ```
+
+2. Настройте переменные окружения:
+   ```groovy
+   environment {
+       DEFECTDOJO_URL = 'https://your-defectdojo-instance.com'
+       DEFECTDOJO_API_KEY = credentials('defectdojo-api-key')
+   }
+   ```
+
+3. Используйте доступные функции сканирования в pipeline:
+
+   ```groovy
+   stage('Security Scan') {
+       steps {
+           script {
+               // SAST сканирование
+               runSemgrepScan(
+                   containerName: 'app',
+                   scanPath: '/app',
+                   engagementId: '1'
+               )
+
+               // Сканирование инфраструктуры
+               runKICSScan(
+                   containerName: 'infra',
+                   scanPath: '/terraform',
+                   engagementId: '1'
+               )
+
+               // DAST сканирование
+               runNucleiScan(
+                   targetUrl: 'http://app:8080',
+                   engagementId: '1'
+               )
+           }
+       }
+   }
+   ```
+
+### Использование Pipeline Script from SCM
+
+Альтернативный способ использования библиотеки - через Pipeline Script from SCM:
+
+1. Создайте файл `Jenkinsfile` в корне вашего репозитория:
+   ```groovy
+   @Library('security-library') _
+   
+   pipeline {
+       agent any
+       
+       environment {
+           DEFECTDOJO_URL = 'https://your-defectdojo-instance.com'
+           DEFECTDOJO_API_KEY = credentials('defectdojo-api-key')
+       }
+       
+       stages {
+           stage('Security Scan') {
+               steps {
+                   script {
+                       // Ваши шаги сканирования
+                   }
+               }
+           }
+       }
+   }
+   ```
+
+2. Настройте pipeline в Jenkins:
+   - Создайте новый Pipeline job
+   - В секции "Pipeline" выберите "Pipeline script from SCM"
+   - Укажите:
+     - SCM: Git
+     - Repository URL: URL вашего репозитория
+     - Credentials: если требуются
+     - Branch Specifier: */main (или вашу ветку)
+     - Script Path: Jenkinsfile
+
+3. Преимущества этого подхода:
+   - Jenkinsfile хранится в системе контроля версий
+   - История изменений pipeline отслеживается вместе с кодом
+   - Возможность code review для изменений в pipeline
+   - Автоматический запуск при изменениях в репозитории
+
+### Параллельное выполнение
+
+Для оптимизации времени выполнения можно запускать сканеры параллельно:
+
+```groovy
+stage('Security Scan') {
+    steps {
+        script {
+            parallel(
+                "SAST": {
+                    runSemgrepScan(...)
+                },
+                "IaC": {
+                    runKICSScan(...)
+                },
+                "DAST": {
+                    runNucleiScan(...)
+                }
+            )
+        }
+    }
+}
+```
+
+### Управление результатами
+
+1. Создание нового engagement:
+   ```groovy
+   def engagement = defectdojo.createEngagement(
+       productId: '1',
+       name: "Security Scan ${BUILD_NUMBER}"
+   )
+   ```
+
+2. Получение результатов:
+   ```groovy
+   def findings = defectdojo.searchFindings(
+       engagementId: engagement.id
+   )
+   ```
+
+3. Обработка результатов:
+   ```groovy
+   if (findings.findAll { it.severity in ['Critical', 'High'] }.size() > 0) {
+       error "Обнаружены критические уязвимости!"
+   }
+   ```
+
+### Настройка уведомлений
+
+Добавьте обработку результатов в блок `post`:
+
+```groovy
+post {
+    always {
+        script {
+            def findings = defectdojo.searchFindings(
+                engagementId: env.ENGAGEMENT_ID
+            )
+            
+            echo """
+            Результаты сканирования:
+            - Всего уязвимостей: ${findings.count}
+            - Критических: ${findings.findAll { it.severity == 'Critical' }.size()}
+            - Высоких: ${findings.findAll { it.severity == 'High' }.size()}
+            """
+        }
+    }
+}
+```
+
+### Лучшие практики
+
+1. **Версионирование**: Всегда указывайте конкретную версию библиотеки:
+   ```groovy
+   @Library('security-library@v1.0.0') _
+   ```
+
+2. **Обработка ошибок**: Используйте блоки try-catch для обработки ошибок сканеров:
+   ```groovy
+   try {
+       runSemgrepScan(...)
+   } catch (Exception e) {
+       echo "Ошибка при SAST сканировании: ${e.message}"
+       currentBuild.result = 'UNSTABLE'
+   }
+   ```
+
+3. **Кэширование**: Используйте кэширование Docker образов для ускорения сканирования:
+   ```groovy
+   options {
+       skipDefaultCheckout()
+   }
+   ```
+
+4. **Документирование**: Добавляйте комментарии к настройкам сканеров:
+   ```groovy
+   runKICSScan(
+       containerName: 'infra',
+       scanPath: '/terraform',
+       // Указываем только нужные платформы для сканирования
+       platforms: ['terraform', 'k8s'],
+       engagementId: '1'
+   )
+   ```
+
 ## API Reference
 
 ### DefectDojo API
