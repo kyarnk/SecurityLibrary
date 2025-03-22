@@ -89,7 +89,7 @@ pipeline {
                     // Запуск Syft для анализа состава ПО
                     // TODO: Замените на имя и тег вашего Docker образа
                     runSyftScan(
-                        imageName: 'juice-shop:latest',
+                        imageName: 'bkimminich/juice-shop:latest',
                         defectDojoUrl: env.DEFECTDOJO_URL,
                         defectDojoApiKey: env.DEFECTDOJO_API_KEY,
                         engagementId: env.DEFECTDOJO_ENGAGEMENT_ID
@@ -98,7 +98,7 @@ pipeline {
                     // Запуск Grype для поиска уязвимостей в зависимостях
                     // TODO: Замените на имя и тег вашего Docker образа
                     runGrypeScan(
-                        imageName: 'juice-shop:latest',
+                        imageName: 'bkimminich/juice-shop:latest',
                         defectDojoUrl: env.DEFECTDOJO_URL,
                         defectDojoApiKey: env.DEFECTDOJO_API_KEY,
                         engagementId: env.DEFECTDOJO_ENGAGEMENT_ID
