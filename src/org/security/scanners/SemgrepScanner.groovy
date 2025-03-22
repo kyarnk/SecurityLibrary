@@ -16,7 +16,7 @@ class SemgrepScanner extends BaseScanner {
                     docker exec ${config.containerName} semgrep scan --json \
                         --config=auto \
                         --output=results.json \
-                        ${config.scanPath ?: '.'}
+                        ${config.scanPath ?: '/'}
                 """
             } else {
                 // Scanning local files
