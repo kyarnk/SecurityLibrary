@@ -6,11 +6,11 @@ pipeline {
         
     environment {
         // TODO: Замените на реальный URL вашего DefectDojo
-        DEFECTDOJO_URL = 'https://your-defectdojo-instance.com'
+        DEFECTDOJO_URL = 'https://defectdojo.kyarnk.ru'
         // TODO: Создайте credentials с ID 'defectdojo-api-key' в Jenkins
         DEFECTDOJO_API_KEY = credentials('defectdojo-api-key')
         // TODO: Замените на имя вашего контейнера с приложением
-        CONTAINER_NAME = 'dvna'
+        CONTAINER_NAME = 'juice-shop'
         // ID продукта в DefectDojo
         DEFECTDOJO_PRODUCT_ID = '1'
 
@@ -45,7 +45,7 @@ pipeline {
                     // Запуск Semgrep внутри контейнера
                     runSemgrepScan(
                         containerName: env.CONTAINER_NAME,
-                        scanPath: '/var/www/html',  // Путь к файлам внутри контейнера
+                        scanPath: '/',  // Путь к файлам внутри контейнера
                         defectDojoUrl: env.DEFECTDOJO_URL,
                         defectDojoApiKey: env.DEFECTDOJO_API_KEY,
                         engagementId: env.DEFECTDOJO_ENGAGEMENT_ID
@@ -54,7 +54,7 @@ pipeline {
                     // Запуск KICS внутри контейнера
                     runKICSScan(
                         containerName: env.CONTAINER_NAME,
-                        scanPath: '/var/www/html',  // Путь к файлам внутри контейнера
+                        scanPath: '/',  // Путь к файлам внутри контейнера
                         defectDojoUrl: env.DEFECTDOJO_URL,
                         defectDojoApiKey: env.DEFECTDOJO_API_KEY,
                         engagementId: env.DEFECTDOJO_ENGAGEMENT_ID
@@ -89,7 +89,7 @@ pipeline {
                     // Запуск Syft для анализа состава ПО
                     // TODO: Замените на имя и тег вашего Docker образа
                     runSyftScan(
-                        imageName: 'dvna:latest',
+                        imageName: 'juice-shop:latest',
                         defectDojoUrl: env.DEFECTDOJO_URL,
                         defectDojoApiKey: env.DEFECTDOJO_API_KEY,
                         engagementId: env.DEFECTDOJO_ENGAGEMENT_ID
@@ -98,7 +98,7 @@ pipeline {
                     // Запуск Grype для поиска уязвимостей в зависимостях
                     // TODO: Замените на имя и тег вашего Docker образа
                     runGrypeScan(
-                        imageName: 'dvna:latest',
+                        imageName: 'juice-shop:latest',
                         defectDojoUrl: env.DEFECTDOJO_URL,
                         defectDojoApiKey: env.DEFECTDOJO_API_KEY,
                         engagementId: env.DEFECTDOJO_ENGAGEMENT_ID
