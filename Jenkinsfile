@@ -6,7 +6,7 @@ pipeline {
         
     environment {
         // TODO: Замените на реальный URL вашего DefectDojo
-        DEFECTDOJO_URL = 'http://51.250.90.180:8080/dashboard'
+        DEFECTDOJO_URL = 'http://51.250.90.180:8080/api/v2'  // Добавляем /api/v2'
         // TODO: Создайте credentials с ID 'defectdojo-api-key' в Jenkins
         DEFECTDOJO_API_KEY = credentials('defectdojo-api-key')
         // TODO: Замените на имя вашего контейнера с приложением
