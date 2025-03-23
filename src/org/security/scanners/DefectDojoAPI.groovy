@@ -46,7 +46,7 @@ class DefectDojoAPI implements Serializable {
                 curl -X ${method} "${apiUrl}${endpoint}" \\
                 -H "Authorization: Token ${apiKey}" \\
                 -H "Content-Type: application/json" \\
-                -d '${script.groovy.json.JsonOutput.toJson(payload)}' \\
+                -d '${groovy.json.JsonOutput.toJson(payload)}' \\
                 --fail
             """
             
