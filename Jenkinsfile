@@ -1,4 +1,5 @@
 @Library('security-library') _
+
 pipeline {
     agent any
 
@@ -11,7 +12,13 @@ pipeline {
 
         stage('Semgrep Scan') {
             steps {
-                runSemgrepScan('.', 'semgrep_report.json')  // Используем библиотеку
+                script {
+                    runSemgrepScan('.', 'semgrep_report.json')
+
+                    // Выводим результат в консоль
+                    def report = readFile('semgrep_report.json')
+                    echo "Semgrep Scan Results: \n${report}"
+                }
             }
         }
 
@@ -22,5 +29,6 @@ pipeline {
         }
     }
 }
+
 
 
