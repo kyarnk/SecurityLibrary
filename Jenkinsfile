@@ -10,9 +10,9 @@ pipeline {
 
         stage('Semgrep Scan') {
             steps {
-                script {
-                    semgrepScan('juice-shop', 'semgrep_report.json')
-                }
+                sh '''
+                    semgrep scan --config=auto --json > semgrep_report.json
+                '''
             }
         }
 
@@ -23,5 +23,4 @@ pipeline {
         }
     }
 }
-
 
