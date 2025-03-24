@@ -10,9 +10,7 @@ pipeline {
 
         stage('Semgrep Scan') {
             steps {
-                sh '''
-                    semgrep scan --config=auto --json > semgrep_report.json
-                '''
+                runSemgrepScan('.', 'semgrep_report.json')  // Используем библиотеку
             }
         }
 
@@ -23,4 +21,5 @@ pipeline {
         }
     }
 }
+
 
