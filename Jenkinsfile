@@ -13,7 +13,7 @@ pipeline {
         stage('Semgrep Scan') {
             steps {
                 script {
-                    runSemgrepScan('.', 'semgrep_report.json')
+                    runSemgrepScan('/home/kyarnk/juice-shop', 'semgrep_report.json')
 
                     // Выводим результат в консоль
                     def report = readFile('semgrep_report.json')
