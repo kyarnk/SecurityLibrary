@@ -26,9 +26,7 @@ pipeline {
             steps {
                 script {
                     runZAPScan('https://juiceshop.kyarnk.ru', 'zap_report.json')
-                
-                    def zapReport = readFile('zap_report.json')
-                    echo "OWASP ZAP Scan Results: \n${zapReport}"
+                    
                 }
             }
         }
