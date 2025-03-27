@@ -31,9 +31,17 @@ pipeline {
             }
         }
 
+        stage('Nuclei Scan') {
+            steps {
+                script {
+                    runNucleiScan('https://juiceshop.kyarnk.ru', 'nuclei_report.json')
+                }
+            }
+        }
+
         stage('Archive Report') {
             steps {
-                archiveArtifacts artifacts: ['semgrep_report.json, zap-reports/zap_report.json'], fingerprint: true
+                archiveArtifacts artifacts: ['semgrep_report.json, zap-reports/zap_report.json, nuclei-reports/nuclei_report.json'], fingerprint: true
             }
         }
     }
