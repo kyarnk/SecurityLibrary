@@ -15,9 +15,6 @@ pipeline {
                 script {
                     runSemgrepScan('/home/kyarnk/juice-shop', 'semgrep_report.json')
 
-                    // Выводим результат в консоль
-                    def report = readFile('semgrep_report.json')
-                    echo "Semgrep Scan Results: \n${report}"
                 }
             }
         }
