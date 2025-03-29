@@ -44,6 +44,17 @@ pipeline {
             }
         }
 
+        stage ('Move reports') {
+            steps {
+                script {
+                    sh 'mv /home/kyarnk/semgrep-reports/*.json $WORKSPACE/'
+                    sh 'mv /home/kyarnk/zap-reports/*.json $WORKSPACE/'
+                    sh 'mv /home/kyarnk/nuclei-reports/*.json $WORKSPACE/'
+                    sh 'mv /home/kyarnk/sca-reports/*.json $WORKSPACE/'
+                }
+            }
+        }
+
         stage('Archive Report') {
             steps {
                script {
