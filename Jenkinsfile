@@ -39,7 +39,7 @@ pipeline {
         stage('Archive Report') {
             steps {
                script {
-                    archiveArtifacts artifacts: 'semgrep-reports/semgrep_report.json, zap-reports/zap_report.json, nuclei-reports/nuclei_report.json', fingerprint: true
+                    archiveArtifacts artifacts: 'semgrep_report.json, zap_report.json, nuclei_report.json', fingerprint: true
                     echo 'Reports archived.'
                }
             }
