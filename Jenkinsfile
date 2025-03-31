@@ -44,6 +44,15 @@ pipeline {
             }
         }
 
+        stage ('KICS Scan') {
+            steps {
+                script {
+                    runKICSScan('/home/kyarnk/kics-test', 'kics_report.json')
+                }
+            }
+        }
+
+
         stage ('Move reports') {
             steps {
                 script {
@@ -51,6 +60,7 @@ pipeline {
                     sh 'mv /home/kyarnk/zap-reports/*.json $WORKSPACE/'
                     sh 'mv /home/kyarnk/nuclei-reports/*.json $WORKSPACE/'
                     sh 'mv /home/kyarnk/sca-reports/*.json $WORKSPACE/'
+                    sh 'mv /home/kyarnk/kics-test/*.json $WORKSPACE/'
                 }
             }
         }
@@ -58,7 +68,7 @@ pipeline {
         stage('Archive Report') {
             steps {
                script {
-                    archiveArtifacts artifacts: 'semgrep_report.json, zap_report.json, nuclei_report.json, syft_report.json, grype_report.json', fingerprint: true
+                    archiveArtifacts artifacts: 'semgrep_report.json, zap_report.json, nuclei_report.json, syft_report.json, grype_report.json, kics_report.json', fingerprint: true
                     echo 'Reports archived.'
                }
             }
