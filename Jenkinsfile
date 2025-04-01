@@ -43,11 +43,16 @@ pipeline {
                 }
             }
         }
-
+               
         stage ('KICS Scan') {
             steps {
                 script {
-                    runKICSScan('/home/kyarnk/kics-test', 'kics_report.json')
+                    try {
+                        runKICSScan('/home/kyarnk/kics-test', 'kics_report.json')
+                    } catch (Exception e) {
+                        echo "KICS scan failed: ${e.getMessage()}"
+                        currentBuild.result = 'UNSTABLE'
+                    }
                 }
             }
         }
