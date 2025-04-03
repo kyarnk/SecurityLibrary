@@ -23,7 +23,6 @@
 - Гибкая конфигурация для каждого сканера
 - Единый интерфейс для всех инструментов
 - Автоматическая генерация отчетов
-- Поддержка параллельного выполнения сканирований
 
 ## Поддерживаемые инструменты
 
@@ -39,6 +38,17 @@
   - Проверка конфигураций инфраструктуры
   - Поддержка Terraform, Kubernetes, Docker, CloudFormation
   - Выявление проблем безопасности в IaC
+ 
+### Анализ контейнеров
+- **Syft**
+  - Создание SBOM (Software Bill of Materials)
+  - Анализ зависимостей в контейнерах
+  - Поддержка различных форматов
+
+- **Grype**
+  - Сканирование уязвимостей в контейнерах
+  - Проверка зависимостей
+  - Интеграция с базами CVE
 
 ### Динамический анализ (DAST)
 - **Nuclei**
@@ -51,31 +61,14 @@
   - Активное и пассивное сканирование
   - API-сканирование
 
-### Анализ секретов
-- **Gitleaks**
-  - Поиск секретов в Git-репозиториях
-  - Предотвращение утечки чувствительных данных
-  - Настраиваемые правила поиска
-
-### Анализ контейнеров
-- **Syft**
-  - Создание SBOM (Software Bill of Materials)
-  - Анализ зависимостей в контейнерах
-  - Поддержка различных форматов
-
-- **Grype**
-  - Сканирование уязвимостей в контейнерах
-  - Проверка зависимостей
-  - Интеграция с базами CVE
-
 ## Требования
 
 ### Системные требования
-- Jenkins 2.375.1 или выше
+- Jenkins 2.492.2 или выше
 - Docker 20.10 или выше
 - Python 3.8 или выше
 - Go 1.19 или выше
-- Java 11 или выше
+- Java 17 или выше (после 31 марта Java 21)
 - curl
 - git
 
@@ -112,20 +105,39 @@
 
 ```bash
 # Docker
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
+Рекомендуется установка по официальной документации
+# Add Docker's official GPG key:
+sudo apt-get update
+sudo apt-get install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add the repository to Apt sources:
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
 # Python и pip
 sudo apt update
 sudo apt install python3 python3-pip
 
 # Go (для Nuclei)
-wget https://go.dev/dl/go1.19.linux-amd64.tar.gz
-sudo tar -C /usr/local -xzf go1.19.linux-amd64.tar.gz
-export PATH=$PATH:/usr/local/go/bin
+Рекомендуется установка по официальной документации
+
+#Nuclei Github
+git clone https://github.com/projectdiscovery/nuclei.git; \
+cd nuclei/cmd/nuclei; \
+go build; \
+mv nuclei /usr/local/bin/; \
+nuclei -version;
 
 # Java
-sudo apt install openjdk-11-jdk
+sudo apt install openjdk-17-jdk
 ```
 
 ### 3. Настройка прав доступа
@@ -163,38 +175,26 @@ sudo systemctl restart jenkins
 ### Настройка сканеров
 
 #### Semgrep
-```groovy
-runSemgrepScan(
-    containerName: 'app',           // Имя контейнера с приложением
-    scanPath: '/app',              // Путь к коду внутри контейнера
-    rules: ['p/owasp-top-ten'],    // Набор правил
-    defectDojoUrl: env.DEFECTDOJO_URL,
-    defectDojoApiKey: env.DEFECTDOJO_API_KEY,
-    engagementId: '1'              // ID в DefectDojo
-)
+```
+
 ```
 
 #### KICS
-```groovy
-runKICSScan(
-    containerName: 'infra',
-    scanPath: '/terraform',
-    platforms: ['terraform', 'k8s'],
-    defectDojoUrl: env.DEFECTDOJO_URL,
-    defectDojoApiKey: env.DEFECTDOJO_API_KEY,
-    engagementId: '1'
-)
+```
+
+```
+#### Syft and Grype
+```
+
 ```
 
 #### Nuclei
-```groovy
-runNucleiScan(
-    targetUrl: 'http://app:8080',
-    templates: ['cves', 'vulnerabilities'],
-    defectDojoUrl: env.DEFECTDOJO_URL,
-    defectDojoApiKey: env.DEFECTDOJO_API_KEY,
-    engagementId: '1'
-)
+```
+
+```
+#### OWASP ZAP
+```
+
 ```
 
 ## Использование
@@ -246,7 +246,7 @@ runNucleiScan(
 
 ### Использование Pipeline Script from SCM
 
-Альтернативный способ использования библиотеки - через Pipeline Script from SCM:
+Альтернативный способ использования библиотеки - это Pipeline Script from SCM:
 
 1. Создайте файл `Jenkinsfile` в корне вашего репозитория:
    ```groovy
@@ -336,29 +336,6 @@ stage('Security Scan') {
    }
    ```
 
-### Настройка уведомлений
-
-Добавьте обработку результатов в блок `post`:
-
-```groovy
-post {
-    always {
-        script {
-            def findings = defectdojo.searchFindings(
-                engagementId: env.ENGAGEMENT_ID
-            )
-            
-            echo """
-            Результаты сканирования:
-            - Всего уязвимостей: ${findings.count}
-            - Критических: ${findings.findAll { it.severity == 'Critical' }.size()}
-            - Высоких: ${findings.findAll { it.severity == 'High' }.size()}
-            """
-        }
-    }
-}
-```
-
 ### Лучшие практики
 
 1. **Версионирование**: Всегда указывайте конкретную версию библиотеки:
@@ -383,16 +360,6 @@ post {
    }
    ```
 
-4. **Документирование**: Добавляйте комментарии к настройкам сканеров:
-   ```groovy
-   runKICSScan(
-       containerName: 'infra',
-       scanPath: '/terraform',
-       // Указываем только нужные платформы для сканирования
-       platforms: ['terraform', 'k8s'],
-       engagementId: '1'
-   )
-   ```
 
 ## API Reference
 
@@ -421,191 +388,6 @@ defectdojo.uploadScanResults(
 defectdojo.searchFindings(
     engagementId: '1'
 )
-```
-
-## Примеры
-
-### Базовый pipeline
-```groovy
-@Library('security-library') _
-
-pipeline {
-    agent any
-    
-    environment {
-        DEFECTDOJO_URL = 'https://defectdojo.company.com'
-        DEFECTDOJO_API_KEY = credentials('defectdojo-api-key')
-        CONTAINER_NAME = 'app'
-    }
-    
-    stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-        
-        stage('Security Scan') {
-            steps {
-                script {
-                    // Создаем engagement
-                    def engagement = defectdojo.createEngagement(
-                        productId: '1',
-                        name: "Security Scan ${BUILD_NUMBER}"
-                    )
-                    
-                    // Запускаем сканеры
-                    parallel(
-                        "SAST": {
-                            runSemgrepScan(
-                                containerName: env.CONTAINER_NAME,
-                                scanPath: '/app',
-                                engagementId: engagement.id
-                            )
-                        },
-                        "DAST": {
-                            runNucleiScan(
-                                targetUrl: 'http://app:8080',
-                                engagementId: engagement.id
-                            )
-                        },
-                        "Secrets": {
-                            runGitleaksScan(
-                                scanPath: '.',
-                                engagementId: engagement.id
-                            )
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
-```
-
-### Полный pipeline с отчетами
-```groovy
-@Library('security-library') _
-
-pipeline {
-    agent any
-    
-    environment {
-        DEFECTDOJO_URL = 'https://defectdojo.company.com'
-        DEFECTDOJO_API_KEY = credentials('defectdojo-api-key')
-        CONTAINER_NAME = 'app'
-        PRODUCT_ID = '1'
-    }
-    
-    stages {
-        stage('Initialize') {
-            steps {
-                script {
-                    // Проверяем доступность DefectDojo
-                    def product = defectdojo.getProduct(productId: env.PRODUCT_ID)
-                    echo "Сканирование для продукта: ${product.name}"
-                    
-                    // Создаем engagement
-                    def engagement = defectdojo.createEngagement(
-                        productId: env.PRODUCT_ID,
-                        name: "Security Scan ${BUILD_NUMBER}",
-                        branch: env.BRANCH_NAME
-                    )
-                    env.ENGAGEMENT_ID = engagement.id.toString()
-                }
-            }
-        }
-        
-        stage('Security Scan') {
-            parallel {
-                stage('SAST') {
-                    steps {
-                        runSemgrepScan(
-                            containerName: env.CONTAINER_NAME,
-                            scanPath: '/app',
-                            engagementId: env.ENGAGEMENT_ID
-                        )
-                    }
-                }
-                
-                stage('IaC') {
-                    steps {
-                        runKICSScan(
-                            containerName: env.CONTAINER_NAME,
-                            scanPath: '/infra',
-                            engagementId: env.ENGAGEMENT_ID
-                        )
-                    }
-                }
-                
-                stage('DAST') {
-                    steps {
-                        runNucleiScan(
-                            targetUrl: 'http://app:8080',
-                            engagementId: env.ENGAGEMENT_ID
-                        )
-                        
-                        runOWASPZAPScan(
-                            targetUrl: 'http://app:8080',
-                            engagementId: env.ENGAGEMENT_ID
-                        )
-                    }
-                }
-                
-                stage('Container') {
-                    steps {
-                        runSyftScan(
-                            imageName: "${env.CONTAINER_NAME}:latest",
-                            engagementId: env.ENGAGEMENT_ID
-                        )
-                        
-                        runGrypeScan(
-                            imageName: "${env.CONTAINER_NAME}:latest",
-                            engagementId: env.ENGAGEMENT_ID
-                        )
-                    }
-                }
-            }
-        }
-        
-        stage('Report') {
-            steps {
-                script {
-                    def findings = defectdojo.searchFindings(
-                        engagementId: env.ENGAGEMENT_ID
-                    )
-                    
-                    echo """
-                    Результаты сканирования:
-                    - Всего уязвимостей: ${findings.count}
-                    - Критических: ${findings.findAll { it.severity == 'Critical' }.size()}
-                    - Высоких: ${findings.findAll { it.severity == 'High' }.size()}
-                    - Средних: ${findings.findAll { it.severity == 'Medium' }.size()}
-                    - Низких: ${findings.findAll { it.severity == 'Low' }.size()}
-                    
-                    Отчет доступен по ссылке: ${env.DEFECTDOJO_URL}/engagement/${env.ENGAGEMENT_ID}
-                    """
-                }
-            }
-        }
-    }
-    
-    post {
-        always {
-            cleanWs()
-        }
-        failure {
-            script {
-                def findings = defectdojo.searchFindings(
-                    engagementId: env.ENGAGEMENT_ID
-                )
-                if (findings.findAll { it.severity in ['Critical', 'High'] }.size() > 0) {
-                    error "Обнаружены критические уязвимости!"
-                }
-            }
-        }
-    }
-}
 ```
 
 ## Устранение неполадок
