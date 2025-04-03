@@ -13,7 +13,8 @@ pipeline {
         stage('Semgrep Scan') {
             steps {
                 script {
-                    runSemgrepScan('/home/kyarnk/juice-shop', 'semgrep_report.json')
+                    def targetDir = "${env.WORKSPACE}/juice-shop"
+                    runSemgrepScan(targetDir, 'semgrep_report.json')
 
                 }
             }
@@ -47,8 +48,9 @@ pipeline {
         stage ('KICS Scan') {
             steps {
                 script {
+                    def targetDir = "${env.WORKSPACE}/kics-test"
                     try {
-                        runKICSScan('/home/kyarnk/kics-test', 'kics_report.json')
+                        runKICSScan(targetDir, 'kics_report.json')
                     } catch (Exception e) {
                         echo "KICS scan failed: ${e.getMessage()}"
                         currentBuild.result = 'UNSTABLE'
