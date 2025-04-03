@@ -13,9 +13,7 @@ pipeline {
         stage('Semgrep Scan') {
             steps {
                 script {
-                    def targetDir = "${env.WORKSPACE}/juice-shop"
-                    runSemgrepScan(targetDir, 'semgrep_report.json')
-
+                    runSemgrepScan(env.WORKSPACE, 'semgrep_report.json')
                 }
             }
         }
@@ -55,19 +53,6 @@ pipeline {
                         echo "KICS scan failed: ${e.getMessage()}"
                         currentBuild.result = 'UNSTABLE'
                     }
-                }
-            }
-        }
-
-
-        stage ('Move reports') {
-            steps {
-                script {
-                    sh 'mv /home/kyarnk/semgrep-reports/*.json $WORKSPACE/'
-                    sh 'mv /home/kyarnk/zap-reports/*.json $WORKSPACE/'
-                    sh 'mv /home/kyarnk/nuclei-reports/*.json $WORKSPACE/'
-                    sh 'mv /home/kyarnk/sca-reports/*.json $WORKSPACE/'
-                    sh 'mv /home/kyarnk/kics-test/*.json $WORKSPACE/'
                 }
             }
         }
