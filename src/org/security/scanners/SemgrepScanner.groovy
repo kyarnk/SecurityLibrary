@@ -1,10 +1,9 @@
 package org.security
 
 class SemgrepScanner {
-    static String runScan(String targetDir, String outputFile) {
+    static String runScan(String outputFile) {
         return """
-            mkdir -p ${targetDir}
-            docker run --rm -v ${targetDir}:/src docker.io/semgrep/semgrep:latest semgrep scan --config auto --json > ${targetDir}/${outputFile}
+            docker run --rm -v $WORKSPACE:/src docker.io/semgrep/semgrep:latest semgrep scan --config auto --json > ${targetDir}/${outputFile}
         """
     }
 }

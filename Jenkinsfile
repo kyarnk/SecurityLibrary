@@ -10,10 +10,17 @@ pipeline {
             }
         }
 
+        stage('Debug') {
+            steps {
+                sh 'pwd'
+                sh 'ls -lah'
+            }
+        }
+
         stage('Semgrep Scan') {
             steps {
                 script {
-                    runSemgrepScan(env.WORKSPACE, 'semgrep_report.json')
+                    runSemgrepScan('semgrep_report.json')
                 }
             }
         }
