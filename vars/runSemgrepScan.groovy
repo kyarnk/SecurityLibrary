@@ -5,9 +5,12 @@
 //     """
 //     echo "Semgrep scan completed. Report saved to ${targetDir}/${outputFile}"
 // }
-def call(String outputFile = 'semgrep_report.json') {
-    sh """
-        docker run --rm -v $WORKSPACE:/src docker.io/semgrep/semgrep:latest semgrep scan --config auto --json > $WORKSPACE/${outputFile}
-    """
-    echo "Semgrep scan completed. Report saved to $WORKSPACE/${outputFile}"
+import org.security.scanners.SemgrepScanner
+
+def call(String sourcePath = "${env.WORKSPACE}", String outputFile = 'semgrep_report.json') {
+    def fullSourcePath = sourcePath.startsWith("/") ? sourcePath : "${env.WORKSPACE}/${sourcePath}"
+    def command = SemgrepScanner.buildCommand(fullSourcePath, outputFile)
+
+    sh command
+    echo "Semgrep scan completed. Report saved to ${fullSourcePath}/${outputFile}"
 }
