@@ -5,6 +5,8 @@
 //     """
 //     echo "Semgrep scan completed. Report saved to ${targetDir}/${outputFile}"
 // }
+import org.security.scanners.SemgrepScanner
+
 def call(String sourcePath = "${env.WORKSPACE}/juice-shop", String outputFile = 'semgrep_report.json') {
     def outputDir = "${env.WORKSPACE}/reports"
     sh "mkdir -p ${outputDir}"

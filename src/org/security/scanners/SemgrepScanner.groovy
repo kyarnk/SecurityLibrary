@@ -7,7 +7,7 @@ class SemgrepScanner {
               -v ${sourcePath}:/target \
               -v ${outputDir}:/src \
               docker.io/semgrep/semgrep:latest \
-              semgrep scan --config auto --json --quiet --error --output /src/${outputFile} --target /target
+              semgrep scan --config auto --json --quiet --error --output /src/${outputFile} /target
         """.stripIndent().trim()
     }
 }
