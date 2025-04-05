@@ -1,13 +1,9 @@
-package org.security.scanners
+package org.security
 
 class SemgrepScanner {
-    static String buildCommand(String sourcePath, String outputDir, String outputFile) {
+    static String runScan(String targetDir = '', String outputFile = 'semgrep_report.json') {
         return """
-            docker run --rm \
-              -v ${sourcePath}:/target \
-              -v ${outputDir}:/src \
-              docker.io/semgrep/semgrep:latest \
-              semgrep scan --config auto --json --quiet --error --output /src/${outputFile} /target
-        """.stripIndent().trim()
+            docker run --rm -v ${targetDir}:/src docker.io/semgrep/semgrep:latest semgrep scan --config auto --json > ${targetDir}/${outputFile}
+        """
     }
 }
