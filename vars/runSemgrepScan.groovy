@@ -23,30 +23,32 @@
 //     echo "Semgrep report moved to workspace."
 // }
 
-def call(String targetDir = '.', String outputFile = 'semgrep_report.json') {
-    def containerName = "semgrep_${UUID.randomUUID().toString().replaceAll('-', '')}"
-    def containerSourcePath = "/mnt/source"
-    def containerOutputPath = "/mnt/output"
+def call(String targetDir = '', String outputFile = 'semgrep_report.json') {
+    def containerName = "semgrep-${UUID.randomUUID().toString()}"
+    
+    // Создаём временные директории
+    sh "mkdir -p semgrep_output"
 
-    // Создаём контейнер с нужной командой
+    // Запускаем контейнер в фоне
     sh """
-        docker create --name ${containerName} semgrep/semgrep semgrep --config=auto ${containerSourcePath} -o ${containerOutputPath}/${outputFile}
+        docker run -d --name ${containerName} \
+        -v \$WORKSPACE/${targetDir}:/mnt/source:ro \
+        -v \$WORKSPACE/semgrep_output:/mnt/output \
+        semgrep/semgrep tail -f /dev/null
     """
 
-    // Копируем исходный код внутрь контейнера
-    sh "docker cp '${targetDir}' ${containerName}:${containerSourcePath}"
+    // Запускаем саму проверку
+    sh """
+        docker exec ${containerName} semgrep --config=auto /mnt/source -o /mnt/output/${outputFile}
+    """
 
-    // Создаём папку для отчёта
-    sh "docker exec ${containerName} mkdir -p ${containerOutputPath}"
-
-    // Запускаем сканирование
-    sh "docker start -a ${containerName}"
-
-    // Копируем отчёт обратно
-    sh "docker cp ${containerName}:${containerOutputPath}/${outputFile} ${outputFile}"
+    // Копируем результат обратно (он уже в томе, можно просто обращаться к WORKSPACE)
+    sh """
+        cp semgrep_output/${outputFile} ${outputFile}
+    """
 
     // Удаляем контейнер
-    sh "docker rm ${containerName}"
+    sh "docker rm -f ${containerName}"
 
-    echo "Semgrep scan completed. Report saved to: ${outputFile}"
+    echo "Semgrep scan completed. Report saved to \$WORKSPACE/${outputFile}"
 }
