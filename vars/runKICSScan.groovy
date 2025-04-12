@@ -15,15 +15,18 @@ def call(String targetDir = '', String outputFile = 'kics_report.json', String h
     workspaceDir = workspaceDir ?: env.WORKSPACE
     
     // Директория для отчётов
-    def outputDir = "${workspaceDir}/reports"
+    def outputDir = "${homeDir}/reports"
 
     // Создаём директорию для отчётов, если её нет
     sh "mkdir -p ${outputDir}"
 
     // Запуск KICS с использованием Docker
     sh """
-        docker run --rm -v ${targetDir}:/path checkmarx/kics:latest scan -p /path -o /path/${outputFile}
+        docker run --rm -v ${targetDir}:/path -v ${outputDir}:/reports checkmarx/kics:latest scan -p /path -o /reports/${outputFile}
     """
     
     echo "KICS scan completed. Report saved to ${outputDir}/${outputFile}"
 }
+
+
+// docker run --rm -v ${targetDir}:/path checkmarx/kics:latest scan -p /path -o /path/${outputFile}
