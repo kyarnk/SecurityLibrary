@@ -23,32 +23,26 @@
 //     echo "Semgrep report moved to workspace."
 // }
 
-def call(String targetDir = '', String outputFile = 'semgrep_report.json') {
-    def containerName = "semgrep-${UUID.randomUUID().toString()}"
+def call(String sourcePath = '', String outputFile = 'semgrep_report.json', String homeDir = '', String workspaceDir = '') {
+    // Проверяем, если homeDir не передан, использовать пустую строку
+    if (homeDir == '') {
+        error "Home directory must be specified!"
+    }
     
-    // Создаём временные директории
-    sh "mkdir -p semgrep_output"
+    // Если workspaceDir не указан, используем $WORKSPACE (автоматический параметр Jenkins)
+    workspaceDir = workspaceDir ?: env.WORKSPACE
+    
+    // Директория для отчётов
+    def outputDir = "${homeDir}/reports"
 
-    // Запускаем контейнер в фоне
+    // Создаём директорию для отчётов, если её нет
+    sh "mkdir -p ${outputDir}"
+
+    // Запуск Semgrep с переданными параметрами
     sh """
-        docker run -d --name ${containerName} \
-        -v \$WORKSPACE/${targetDir}:/mnt/source:ro \
-        -v \$WORKSPACE/semgrep_output:/mnt/output \
-        semgrep/semgrep tail -f /dev/null
+        docker run --rm -v ${sourcePath}:/mnt/source:ro -v ${outputDir}:/mnt/output semgrep/semgrep semgrep --config=auto /mnt/source -o /mnt/output/${outputFile}
     """
 
-    // Запускаем саму проверку
-    sh """
-        docker exec ${containerName} semgrep --config=auto /mnt/source -o /mnt/output/${outputFile}
-    """
-
-    // Копируем результат обратно (он уже в томе, можно просто обращаться к WORKSPACE)
-    sh """
-        cp semgrep_output/${outputFile} ${outputFile}
-    """
-
-    // Удаляем контейнер
-    sh "docker rm -f ${containerName}"
-
-    echo "Semgrep scan completed. Report saved to \$WORKSPACE/${outputFile}"
+    echo "Semgrep scan completed. Report saved to ${outputDir}/${outputFile}"
 }
+
