@@ -15,7 +15,7 @@ def call(String targetDir = '', String outputFile = 'kics_report.json', String h
     workspaceDir = workspaceDir ?: env.WORKSPACE
     
     // Директория для отчётов
-    def outputDir = "${homeDir}/reports"
+    def outputDir = "${workspaceDir}/reports"
 
     // Создаём директорию для отчётов, если её нет
     sh "mkdir -p ${outputDir}"
