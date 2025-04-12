@@ -5,18 +5,11 @@
 //     echo "Semgrep scan completed. Report saved to /var/lib/jenkins/reports/${outputFile}"
 // }
 
-def call(String targetDir = '', String outputFile = 'semgrep_report.json') {
-    def scanPath = targetDir?.trim() ? targetDir : env.WORKSPACE
-    def containerTarget = "/mnt/target"
-    def containerReports = "/mnt/reports"
-
+def call(String scanPath = '.', String outputFile = 'semgrep_report.json') {
+    def reportDir = 'reports'
     sh """
-        mkdir -p ${env.WORKSPACE}/reports
-        docker run --rm \
-            -v ${scanPath}:${containerTarget} \
-            -v ${env.WORKSPACE}/reports:${containerReports} \
-            semgrep/semgrep \
-            semgrep --config=auto ${containerTarget} -o ${containerReports}/${outputFile}
+        mkdir -p ${reportDir}
+        semgrep --config=auto ${scanPath} -o ${reportDir}/${outputFile}
     """
-    echo "Semgrep scan completed. Report saved to ${env.WORKSPACE}/reports/${outputFile}"
+    echo "✅ Semgrep scan completed. Report saved to ${reportDir}/${outputFile}"
 }
