@@ -16,7 +16,7 @@ def call(String targetUrl = '', String outputFile = 'nuclei_report.json', String
     // Запуск Nuclei
     sh """
         docker run --rm -v ${outputDir}:/output projectdiscovery/nuclei:latest \
-        -u ${targetUrl} -json -o /output/${outputFile}
+        -u ${targetUrl} -o /output/${outputFile} -j
     """
 
     echo "Nuclei scan completed. Report saved to ${outputDir}/${outputFile}"
