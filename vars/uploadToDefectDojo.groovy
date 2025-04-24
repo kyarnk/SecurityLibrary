@@ -161,54 +161,113 @@
 //     echo "Upload completed."
 // }
 
+
+
+// def call(Map config = [:]) {
+//     def reportName = config.reportName ?: error("Missing parameter: reportName")
+//     def scanType   = config.scanType ?: error("Missing parameter: scanType")
+//     def productName = config.productName ?: error("Missing parameter: productName")
+//     def engagementName = config.engagementName ?: "Initial Security Scan"
+//     def homeDir = config.homeDir ?: "."
+
+//     withCredentials([string(credentialsId: 'defect-dojo_api_key', variable: 'DD_API_KEY')]) {
+//         sh """
+//         set -e
+
+//         mkdir -p ${homeDir}/reports/defectdojo-temp
+
+//         # Get or create product
+//         PRODUCT_ID=\$(curl -s -H "Authorization: Token \$DD_API_KEY" \
+//             "${env.DEFECTDOJO_URL}/api/v2/products/?name=${productName}" | jq '.results[0].id')
+
+//         if [ "\$PRODUCT_ID" = "null" ] || [ -z "\$PRODUCT_ID" ]; then
+//             echo "Product '${productName}' not found. Creating..."
+//             PRODUCT_ID=\$(curl -s -X POST -H "Authorization: Token \$DD_API_KEY" -H "Content-Type: application/json" \
+//                 -d '{ "name": "${productName}", "prod_type": 1 }' \
+//                 "${env.DEFECTDOJO_URL}/api/v2/products/" | jq '.id')
+//         fi
+
+//         echo "Product ID: \$PRODUCT_ID"
+
+//         # Get or create engagement
+//         ENGAGEMENT_ID=\$(curl -s -H "Authorization: Token \$DD_API_KEY" \
+//             "${env.DEFECTDOJO_URL}/api/v2/engagements/?name=${engagementName}&product=\$PRODUCT_ID" | jq '.results[0].id')
+
+//         if [ "\$ENGAGEMENT_ID" = "null" ] || [ -z "\$ENGAGEMENT_ID" ]; then
+//             echo "Engagement '${engagementName}' not found. Creating..."
+//             ENGAGEMENT_ID=\$(curl -s -X POST -H "Authorization: Token \$DD_API_KEY" -H "Content-Type: application/json" \
+//                 -d '{ "name": "${engagementName}", "product": '\$PRODUCT_ID', "status": "In Progress", "target_start": "2024-01-01", "target_end": "2025-01-01" }' \
+//                 "${env.DEFECTDOJO_URL}/api/v2/engagements/" | jq '.id')
+//         fi
+
+//         echo "Engagement ID: \$ENGAGEMENT_ID"
+
+//         # Upload report
+//         curl -X POST "${env.DEFECTDOJO_URL}/api/v2/import-scan/" \
+//             -H "Authorization: Token \$DD_API_KEY" \
+//             -F "file=@${homeDir}/reports/${reportName}" \
+//             -F "engagement=\$ENGAGEMENT_ID" \
+//             -F "scan_type=${scanType}" \
+//             -F "verified=true" \
+//             -F "active=true" \
+//             -F "auto_create_context=true"
+//         """
+//     }
+// }
+
+
 def call(Map config = [:]) {
-    def reportName = config.reportName ?: error("Missing parameter: reportName")
-    def scanType   = config.scanType ?: error("Missing parameter: scanType")
-    def productName = config.productName ?: error("Missing parameter: productName")
-    def engagementName = config.engagementName ?: "Initial Security Scan"
-    def homeDir = config.homeDir ?: "."
+    def reportName     = config.reportName
+    def scanType       = config.scanType
+    def productName    = config.productName
+    def engagementName = config.engagementName
+    def homeDir        = config.homeDir ?: env.WORKSPACE
+
+    def reportPath = "${homeDir}/reports/${reportName}"
+    if (!fileExists(reportPath)) {
+        reportPath = "${homeDir}/${reportName}"
+    }
+
+    if (!fileExists(reportPath)) {
+        error "❌ Report file not found at path: ${reportPath}"
+    }
 
     withCredentials([string(credentialsId: 'defect-dojo_api_key', variable: 'DD_API_KEY')]) {
         sh """
-        set -e
+            set -euxo pipefail
 
-        mkdir -p ${homeDir}/reports/defectdojo-temp
+            cd "${homeDir}"
 
-        # Get or create product
-        PRODUCT_ID=\$(curl -s -H "Authorization: Token \$DD_API_KEY" \
-            "${env.DEFECTDOJO_URL}/api/v2/products/?name=${productName}" | jq '.results[0].id')
+            PRODUCT_ID=\$(curl -s -X GET "${env.DEFECTDOJO_URL}/api/v2/products/?name=${productName}" \\
+                -H "Authorization: Token \$DD_API_KEY" | jq -r '.results[0].id')
 
-        if [ "\$PRODUCT_ID" = "null" ] || [ -z "\$PRODUCT_ID" ]; then
-            echo "Product '${productName}' not found. Creating..."
-            PRODUCT_ID=\$(curl -s -X POST -H "Authorization: Token \$DD_API_KEY" -H "Content-Type: application/json" \
-                -d '{ "name": "${productName}", "prod_type": 1 }' \
-                "${env.DEFECTDOJO_URL}/api/v2/products/" | jq '.id')
-        fi
+            if [ "\$PRODUCT_ID" = "null" ] || [ -z "\$PRODUCT_ID" ]; then
+                echo "Creating product: ${productName}"
+                PRODUCT_ID=\$(curl -s -X POST "${env.DEFECTDOJO_URL}/api/v2/products/" \\
+                    -H "Authorization: Token \$DD_API_KEY" \\
+                    -H "Content-Type: application/json" \\
+                    -d '{"name": "${productName}", "description": "Created by Jenkins"}' | jq -r '.id')
+            fi
 
-        echo "Product ID: \$PRODUCT_ID"
+            ENGAGEMENT_ID=\$(curl -s -X GET "${env.DEFECTDOJO_URL}/api/v2/engagements/?name=${engagementName}&product=\$PRODUCT_ID" \\
+                -H "Authorization: Token \$DD_API_KEY" | jq -r '.results[0].id')
 
-        # Get or create engagement
-        ENGAGEMENT_ID=\$(curl -s -H "Authorization: Token \$DD_API_KEY" \
-            "${env.DEFECTDOJO_URL}/api/v2/engagements/?name=${engagementName}&product=\$PRODUCT_ID" | jq '.results[0].id')
+            if [ "\$ENGAGEMENT_ID" = "null" ] || [ -z "\$ENGAGEMENT_ID" ]; then
+                echo "Creating engagement: ${engagementName}"
+                ENGAGEMENT_ID=\$(curl -s -X POST "${env.DEFECTDOJO_URL}/api/v2/engagements/" \\
+                    -H "Authorization: Token \$DD_API_KEY" \\
+                    -H "Content-Type: application/json" \\
+                    -d '{"name": "${engagementName}", "product": \$PRODUCT_ID, "target_start": "2024-01-01", "target_end": "2024-12-31", "engagement_type": "CI/CD"}' | jq -r '.id')
+            fi
 
-        if [ "\$ENGAGEMENT_ID" = "null" ] || [ -z "\$ENGAGEMENT_ID" ]; then
-            echo "Engagement '${engagementName}' not found. Creating..."
-            ENGAGEMENT_ID=\$(curl -s -X POST -H "Authorization: Token \$DD_API_KEY" -H "Content-Type: application/json" \
-                -d '{ "name": "${engagementName}", "product": '\$PRODUCT_ID', "status": "In Progress", "target_start": "2024-01-01", "target_end": "2025-01-01" }' \
-                "${env.DEFECTDOJO_URL}/api/v2/engagements/" | jq '.id')
-        fi
-
-        echo "Engagement ID: \$ENGAGEMENT_ID"
-
-        # Upload report
-        curl -X POST "${env.DEFECTDOJO_URL}/api/v2/import-scan/" \
-            -H "Authorization: Token \$DD_API_KEY" \
-            -F "file=@${homeDir}/reports/${reportName}" \
-            -F "engagement=\$ENGAGEMENT_ID" \
-            -F "scan_type=${scanType}" \
-            -F "verified=true" \
-            -F "active=true" \
-            -F "auto_create_context=true"
+            curl -X POST "${env.DEFECTDOJO_URL}/api/v2/import-scan/" \\
+                -H "Authorization: Token \$DD_API_KEY" \\
+                -F "file=@${reportPath}" \\
+                -F "engagement=\$ENGAGEMENT_ID" \\
+                -F "scan_type=${scanType}" \\
+                -F "verified=true" \\
+                -F "active=true" \\
+                -F "auto_create_context=true"
         """
     }
 }
