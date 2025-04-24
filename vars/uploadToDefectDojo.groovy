@@ -234,7 +234,7 @@ def call(Map config = [:]) {
 
     withCredentials([string(credentialsId: 'defect-dojo_api_key', variable: 'DD_API_KEY')]) {
         sh """
-            set -euxo pipefail
+            set -e
 
             cd "${homeDir}"
 
