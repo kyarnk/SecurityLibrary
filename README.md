@@ -210,13 +210,13 @@ docker run --rm -v ${outputDir}:/zap/wrk/ -t zaproxy/zap-stable \
 
 3. Используйте доступные функции сканирования в pipeline:
 
-   ```groovy
+```groovy
 stage('Semgrep Scan') {
     steps {
         runSemgrepScan(SOURCE_PATH, 'semgrep_report.json', HOME_DIR, WORKSPACE_PATH)
     }
 }
-   ```
+```
 
 ### Использование Pipeline Script from SCM (рекомендуется)
 
