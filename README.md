@@ -302,3 +302,23 @@ stage('Security Scan') {
   - `runSemgrepScan.groovy` — сценарий запуска Semgrep.
   - `runZAPScan.groovy` — сценарий запуска OWASP ZAP.
   - `uploadToDefectDojo.groovy` — сценарий для загрузки отчётов в DefectDojo. (НЕ ИСПОЛЬЗУЕТСЯ)
+ 
+```bash
+├── README.md
+├── scripts
+│   └── uploader
+│       ├── defectdojo\_uploader.py
+│       └── Dockerfile
+├── src
+│   └── org
+│       └── security
+│           └── scanners
+|
+└── vars
+├── runKICSScan.groovy
+├── runNucleiScan.groovy
+├── runSCAScan.groovy
+├── runSemgrepScan.groovy
+├── runZAPScan.groovy
+└── uploadToDefectDojo.groovy (not use)
+```
