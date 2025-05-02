@@ -11,9 +11,7 @@
 5. [Конфигурация](#конфигурация)
 6. [Использование](#использование)
 7. [API Reference](#api-reference)
-8. [Примеры](#примеры)
-9. [Устранение неполадок](#устранение-неполадок)
-10. [Разработка](#разработка)
+
 
 ## Возможности
 
@@ -428,60 +426,3 @@ defectdojo.searchFindings(
    docker-compose exec uwsgi /bin/bash -c 'python manage.py createsuperuser'
    ```
 
-## Разработка
-
-### Структура проекта
-```
-.
-├── src/
-│   └── org/
-│       └── security/
-│           └── scanners/           # Классы сканеров
-│               ├── BaseScanner.groovy
-│               ├── SemgrepScanner.groovy
-│               ├── KICSScanner.groovy
-│               ├── NucleiScanner.groovy
-│               ├── OWASPZAPScanner.groovy
-│               ├── GitleaksScanner.groovy
-│               ├── SyftScanner.groovy
-│               ├── GrypeScanner.groovy
-│               └── DefectDojoAPI.groovy
-└── vars/                          # Глобальные функции
-    ├── runSemgrepScan.groovy
-    ├── runKICSScan.groovy
-    ├── runNucleiScan.groovy
-    ├── runOWASPZAPScan.groovy
-    ├── runGitleaksScan.groovy
-    ├── runSyftScan.groovy
-    ├── runGrypeScan.groovy
-    └── defectdojo.groovy
-```
-
-### Добавление нового сканера
-
-1. Создайте класс сканера в `src/org/security/scanners/`:
-   ```groovy
-   package org.security.scanners
-
-   class NewScanner extends BaseScanner {
-       NewScanner(script, config) {
-           super(script, config)
-       }
-       
-       def run() {
-           // Реализация сканирования
-       }
-       
-       def parseResults() {
-           // Парсинг результатов
-       }
-   }
-   ```
-
-2. Создайте глобальную функцию в `vars/`:
-   ```groovy
-   def call(Map config) {
-       def scanner = new NewScanner(this, config)
-       scanner.run()
-   }
-   ```
