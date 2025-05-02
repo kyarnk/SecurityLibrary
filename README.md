@@ -213,7 +213,6 @@ docker run --rm -v ${outputDir}:/zap/wrk/ -t zaproxy/zap-stable \
    ```groovy
 stage('Semgrep Scan') {
     steps {
-        // SAST передаем параметры в библиотеку
         runSemgrepScan(SOURCE_PATH, 'semgrep_report.json', HOME_DIR, WORKSPACE_PATH)
     }
 }
