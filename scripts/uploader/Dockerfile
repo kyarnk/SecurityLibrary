@@ -8,10 +8,14 @@ RUN python -m pip install --upgrade pip && \
 
 # Создание рабочей директории и копирование скрипта
 WORKDIR /app
-COPY defectdojo_uploader.py /app/
+COPY upload_reports.py semgrep.json /app 
 
-# Опционально: Устанавливаем права на выполнение скрипта
-RUN chmod +x /app/defectdojo_uploader.py
 
+# # Опционально: Устанавливаем права на выполнение скрипта
+# RUN chmod +x /app/upload_reports.py
+
+
+EXPOSE 8080
 # Установка точки входа (необязательно, но удобно)
-ENTRYPOINT ["python", "/app/defectdojo_uploader.py"] 
+ENTRYPOINT ["python3"]
+CMD ["/app/upload_reports.py", "/app/semgrep.json"]
