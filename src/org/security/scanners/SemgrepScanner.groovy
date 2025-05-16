@@ -1,3 +1,5 @@
+// Template with class
+
 // package org.security
 
 // class SemgrepScanner {
