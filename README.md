@@ -305,10 +305,6 @@ stage('Security Scan') {
  
 ```bash
 ├── README.md
-├── scripts
-│   └── uploader
-│       ├── defectdojo\_uploader.py
-│       └── Dockerfile
 ├── src
 │   └── org
 │       └── security
